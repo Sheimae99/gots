@@ -28,7 +28,7 @@ print("Page opened successfully.")
 try:
     # Wait for the element to be clickable  
     
-    wait = WebDriverWait(driver, 2)
+    wait = WebDriverWait(driver, 10)
 
     # Wait for overlay to disappear
     # wait.until(EC.invisibility_of_element_located((By.XPATH, '//div[@class="row-fluid"]')))
@@ -45,7 +45,42 @@ try:
 except Exception as e:
     print(f"An error occurred in clicking: {e}")
 
+# def scrape_details(row):
+        
+#                 details_link = WebDriverWait(row, 10).until(
+#                     EC.presence_of_element_located((By.XPATH, './/td[@class="col-5"]//a[@title="details"]'))
+#                 )
+#                 driver.execute_script("arguments[0].click();", details_link)
+#                 # details_link.click()
+#                 print("clicked on details successfully")
+
+#                 # Wait for the details to load 
+#                 time.sleep(2)
+#                 contact_data = driver.find_element(By.ID, 'xFormTable-1')
+#                 license_data = driver.find_element(By.ID, 'xFormTable-2')
+#                 other_data = driver.find_element(By.ID, 'xFormTable-3')
+
+#                 get_details(contact_data, contact_name, 'xFormTd-4')
+#                 get_details(contact_data, email_address, 'xFormTd-7')
+#                 get_details(contact_data, address, 'xFormTd-8')
+#                 get_details(license_data, license_number, 'xFormTd-15')
+#                 get_details(other_data, certification_body, 'xFormTd-18')
+#                 get_details(other_data, expiry_date, 'xFormTd-20')
+#                 get_details(other_data, product_details, 'xFormTd-17')
+
+#                 # Go back to the main page
+#                 driver.back()
+
+#                 # Refresh the rows to avoid stale element reference
+#                 rows = WebDriverWait(driver, 10).until(
+#                     EC.presence_of_all_elements_located((By.XPATH, '//table[@class="ui-table search-result-list"]//tr'))
+#                 )
+#                 time.sleep(1)
+
+
+
 def scrape_page():
+
     print(f"Scraping page...")
 
     company = []
@@ -59,14 +94,21 @@ def scrape_page():
     certification_body = []
     expiry_date = []
     product_details = []
+    pdf =[]
 
     try:
+        
+        current_row = 1
+        
         rows = wait.until(
             EC.presence_of_all_elements_located((By.XPATH, '//table[@class="ui-table search-result-list"]//tr'))
         )
 
+        
         for row in rows:
             try:
+                print(f"------------------------------------ROW {current_row} -------------------------------")
+
                 get_column(row, './/td[@class="col-1"]', company)
                 get_column(row, './/td[@class="col-2"]', Country)
                 get_column(row, './/td[@class="col-3"]', product_category)
@@ -76,14 +118,14 @@ def scrape_page():
 
             try:
                 details_link = WebDriverWait(row, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, './/td[@class="col-5"]//a[@title="details"]'))
+                    EC.presence_of_element_located((By.XPATH, './/td[@class="col-5"]//a[@title="details"]'))
                 )
                 driver.execute_script("arguments[0].click();", details_link)
                 # details_link.click()
                 print("clicked on details successfully")
 
-                # Wait for the details to load (adjust the wait time as needed)
-                time.sleep(1)
+                # Wait for the details to load 
+                time.sleep(2)
                 contact_data = driver.find_element(By.ID, 'xFormTable-1')
                 license_data = driver.find_element(By.ID, 'xFormTable-2')
                 other_data = driver.find_element(By.ID, 'xFormTable-3')
@@ -96,6 +138,14 @@ def scrape_page():
                 get_details(other_data, expiry_date, 'xFormTd-20')
                 get_details(other_data, product_details, 'xFormTd-17')
 
+                
+                try: 
+                    pdf_element = table.find_element(By.XPATH, './/td[@class="col-2"]//a[contains(@title, "view the scope certificate")]').get_attribute("href")
+                    pfd.append(pdf_element)
+
+                except NoSuchElementException:
+                    print(f"Pdf link with not found.")
+                    pdf.append(None)
                 # Go back to the main page
                 driver.back()
 
@@ -104,8 +154,51 @@ def scrape_page():
                     EC.presence_of_all_elements_located((By.XPATH, '//table[@class="ui-table search-result-list"]//tr'))
                 )
 
+                # scrape_details(row)
+
             except Exception as details_error:
                 print(f"An error occurred while processing details: {details_error}")
+
+
+                # Retry details processing
+                for i in range(3):  # Retry up to 3 times
+                    try:
+                        # scrape_details(row)
+                        # Code for processing details
+                        details_link = WebDriverWait(row, 10).until(
+                            EC.presence_of_element_located((By.XPATH, './/td[@class="col-5"]//a[@title="details"]'))
+                        )
+                        driver.execute_script("arguments[0].click();", details_link)
+                        # details_link.click()
+                        print("clicked on details successfully")
+
+                        # Wait for the details to load (adjust the wait time as needed)
+                        time.sleep(2)
+                        contact_data = driver.find_element(By.ID, 'xFormTable-1')
+                        license_data = driver.find_element(By.ID, 'xFormTable-2')
+                        other_data = driver.find_element(By.ID, 'xFormTable-3')
+
+                        get_details(contact_data, contact_name, 'xFormTd-4')
+                        get_details(contact_data, email_address, 'xFormTd-7')
+                        get_details(contact_data, address, 'xFormTd-8')
+                        get_details(license_data, license_number, 'xFormTd-15')
+                        get_details(other_data, certification_body, 'xFormTd-18')
+                        get_details(other_data, expiry_date, 'xFormTd-20')
+                        get_details(other_data, product_details, 'xFormTd-17')
+
+                        # Go back to the main page
+                        driver.back()
+
+                        # Refresh the rows to avoid stale element reference
+                        rows = WebDriverWait(driver, 10).until(
+                            EC.presence_of_all_elements_located((By.XPATH, '//table[@class="ui-table search-result-list"]//tr'))
+                        )
+                        break  # Break out of the loop if successful
+                    except Exception as retry_error:
+                        print(f"Retry failed. Retrying details {i} processing: {retry_error}")
+                        time.sleep(2)  
+            
+            current_row += 1
 
     except Exception as e:
         print(f"An error occurred in scraping rows: {e}")
@@ -164,12 +257,10 @@ except Exception as e:
 
 # Call the scrape_page function to scrape the first page
 df = scrape_page()
-df.to_csv('gots_test_dfpage1.csv', index=False)
-
 
 # Set a counter for the number of pages to scrape
 pages_to_scrape =  19
-current_page = 1
+# current_page = 2
 
 
 
@@ -181,13 +272,13 @@ for i in range(pages_to_scrape):
         )
         driver.execute_script("arguments[0].click();", next_page_link)
         # next_page_link.click()
-        print(f"Scraping page {i}...")
+        print(f"############################################################# Scraping page {i+2}...")
         
         # Reinitialize rows after navigating to the next page
         rows = wait.until(
             EC.presence_of_all_elements_located((By.XPATH, '//table[@class="ui-table search-result-list"]//tr'))
         )
-        time.sleep(2)
+        time.sleep(3)
 
         next_page = scrape_page()
 
@@ -200,4 +291,4 @@ for i in range(pages_to_scrape):
         break  # Break out of the loop if there is an error or no next page link is found
 
 
-df.to_csv('gots_data.csv', index=False)
+df.to_csv('gots_data_1000.csv', index=False)
